@@ -82,13 +82,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton>
-              <Plus />
-              <span>New Feed</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarSeparator className="mx-0" />
+            <SidebarSeparator className="mx-0 bg-center" />
             <SidebarMenuButton
               onClick={handleSettingsClick}
               className={
