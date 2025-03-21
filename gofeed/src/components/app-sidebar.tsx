@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Plus } from "lucide-react";
+import { Plus, Settings } from "lucide-react";
 import { ClockTop } from "@/components/ClockTop";
 import { Calendars } from "@/components/calendars";
 import { DatePicker } from "@/components/date-picker";
@@ -55,6 +55,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenuButton>
               <Plus />
               <span>New Calendar</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarSeparator className="mx-0" />
+            <SidebarMenuButton>
+              <Settings />
+              <span>Settings</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
