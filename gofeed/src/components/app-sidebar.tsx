@@ -20,7 +20,7 @@ const data = {
   feeds: [
     {
       name: "My Feeds",
-      items: ["Personal", "Work", "Family,"],
+      items: ["Personal", "Work", "Family"],
     },
     {
       name: "Favorites",
@@ -39,6 +39,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   // Function to handle item selection
   const handleItemClick = (item: string) => {
     setSelectedItem(item);
+  };
+
+  // Function to handle settings selection
+  const handleSettingsClick = () => {
+    setSelectedItem("Settings");
   };
 
   return (
@@ -84,7 +89,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarSeparator className="mx-0" />
-            <SidebarMenuButton>
+            <SidebarMenuButton
+              onClick={handleSettingsClick}
+              className={
+                selectedItem === "Settings"
+                  ? "bg-accent text-accent-foreground"
+                  : ""
+              }
+            >
               <Settings />
               <span>Settings</span>
             </SidebarMenuButton>

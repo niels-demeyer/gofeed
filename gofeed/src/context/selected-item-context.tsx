@@ -1,16 +1,20 @@
-import { createContext, useState, useContext, ReactNode } from "react";
+import * as React from "react";
 
 type SelectedItemContextType = {
   selectedItem: string;
   setSelectedItem: (item: string) => void;
 };
 
-const SelectedItemContext = createContext<SelectedItemContextType | undefined>(
-  undefined
-);
+const SelectedItemContext = React.createContext<
+  SelectedItemContextType | undefined
+>(undefined);
 
-export function SelectedItemProvider({ children }: { children: ReactNode }) {
-  const [selectedItem, setSelectedItem] = useState<string>("Personal");
+export function SelectedItemProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const [selectedItem, setSelectedItem] = React.useState<string>("Personal");
 
   return (
     <SelectedItemContext.Provider value={{ selectedItem, setSelectedItem }}>
@@ -20,7 +24,7 @@ export function SelectedItemProvider({ children }: { children: ReactNode }) {
 }
 
 export function useSelectedItem() {
-  const context = useContext(SelectedItemContext);
+  const context = React.useContext(SelectedItemContext);
   if (context === undefined) {
     throw new Error(
       "useSelectedItem must be used within a SelectedItemProvider"
