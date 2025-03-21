@@ -26,7 +26,7 @@ import {
   useLocation,
   useSearchParams,
 } from "react-router-dom";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 // Helper function to format dates for URL
 function formatDateForUrl(date: Date): string {
