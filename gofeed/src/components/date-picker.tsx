@@ -1,7 +1,8 @@
-// import * as React from "react";
+import * as React from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { SidebarGroup, SidebarGroupContent } from "@/components/ui/sidebar";
 import { useSelectedItem } from "@/context/selected-item-context";
+import { DayClickEventHandler } from "react-day-picker";
 
 export function DatePicker({
   date,
@@ -17,10 +18,58 @@ export function DatePicker({
   const currentDate = date || selectedDate;
   const handleDateChange = onDateChange || setSelectedDate;
 
-  // Handle day selection
-  const handleSelect = (day: Date | undefined) => {
-    if (day) {
-      console.log("DatePicker: day selected:", day.toISOString());
+  // Track multiple selected dates
+  const [selectedDates, setSelectedDates] = React.useState<Date[]>([]);
+
+  // Initialize selected dates with the current date when component mounts
+  React.useEffect(() => {
+    if (currentDate && !selectedDates.some((d) => isSameDay(d, currentDate))) {
+      setSelectedDates([currentDate]);
+    }
+  }, []);
+
+  // Update selected dates when external date changes
+  React.useEffect(() => {
+    if (currentDate && !selectedDates.some((d) => isSameDay(d, currentDate))) {
+      setSelectedDates((prev) => [...prev, currentDate]);
+    }
+  }, [currentDate]);
+
+  // Helper function to check if two dates are the same day
+  const isSameDay = (d1: Date, d2: Date): boolean => {
+    return (
+      d1.getFullYear() === d2.getFullYear() &&
+      d1.getMonth() === d2.getMonth() &&
+      d1.getDate() === d2.getDate()
+    );
+  };
+
+  // Handle day selection with ctrl/meta key support
+  const handleDayClick: DayClickEventHandler = (day, modifiers, e) => {
+    if (!day) return;
+
+    console.log("DatePicker: day selected:", day.toISOString());
+
+    // Check if Ctrl or Meta key is pressed (for multi-select)
+    const isMultiSelect = e?.ctrlKey || e?.metaKey;
+
+    if (isMultiSelect) {
+      // For multi-select, toggle the selected date
+      setSelectedDates((prev) => {
+        // Check if date already selected
+        const dateAlreadySelected = prev.some((d) => isSameDay(d, day));
+
+        if (dateAlreadySelected) {
+          // If already selected, remove it
+          return prev.filter((d) => !isSameDay(d, day));
+        } else {
+          // If not selected, add it
+          return [...prev, day];
+        }
+      });
+    } else {
+      // For single select, just use the regular flow and update the current date
+      setSelectedDates([day]);
       handleDateChange(day);
     }
   };
@@ -29,9 +78,9 @@ export function DatePicker({
     <SidebarGroup className="px-0">
       <SidebarGroupContent>
         <Calendar
-          mode="single"
-          selected={currentDate}
-          onSelect={handleSelect}
+          mode="multiple"
+          selected={selectedDates}
+          onDayClick={handleDayClick}
           className="[&_[role=gridcell].bg-accent]:bg-sidebar-primary [&_[role=gridcell].bg-accent]:text-sidebar-primary-foreground [&_[role=gridcell]]:w-[33px]"
           key={`calendar-${currentDate?.getTime() || "default"}`}
         />
