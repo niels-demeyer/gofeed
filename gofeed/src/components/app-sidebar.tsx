@@ -1,8 +1,8 @@
 import * as React from "react";
 import { Plus, Settings } from "lucide-react";
 import { ClockTop } from "@/components/ClockTop";
-import { Calendars } from "@/components/calendars";
 import { DatePicker } from "@/components/date-picker";
+import { useSelectedItem } from "@/context/selected-item-context";
 import {
   Sidebar,
   SidebarContent,
@@ -39,6 +39,13 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { selectedItem, setSelectedItem } = useSelectedItem();
+
+  // Function to handle item selection
+  const handleItemClick = (item: string) => {
+    setSelectedItem(item);
+  };
+
   return (
     <Sidebar {...props}>
       <SidebarHeader className="border-sidebar-border h-16 border-b flex items-center justify-center">
@@ -47,7 +54,30 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         <DatePicker />
         <SidebarSeparator className="mx-0" />
-        <Calendars calendars={data.calendars} />
+        <div className="px-2 py-2">
+          {data.calendars.map((calendar) => (
+            <div key={calendar.name} className="mb-4">
+              <h3 className="mb-2 px-4 text-sm font-medium text-muted-foreground">
+                {calendar.name}
+              </h3>
+              <div className="space-y-1">
+                {calendar.items.map((item) => (
+                  <button
+                    key={item}
+                    onClick={() => handleItemClick(item)}
+                    className={`w-full rounded-md px-4 py-2 text-left text-sm ${
+                      selectedItem === item
+                        ? "bg-accent text-accent-foreground"
+                        : "text-foreground hover:bg-accent/50"
+                    }`}
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
