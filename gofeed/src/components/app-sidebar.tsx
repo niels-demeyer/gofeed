@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Plus, Settings } from "lucide-react";
+import { Settings } from "lucide-react";
 import { ClockTop } from "@/components/ClockTop";
 import { DatePicker } from "@/components/date-picker";
 import { useSelectedItem } from "@/context/selected-item-context";
