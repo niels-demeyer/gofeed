@@ -34,7 +34,31 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { selectedItem, setSelectedItem } = useSelectedItem();
+  const { selectedItem, setSelectedItem, selectedDate, setSelectedDate } =
+    useSelectedItem();
+
+  // Track multiple selected dates
+  const [selectedDates, setSelectedDates] = React.useState<Date[]>([]);
+
+  // Helper function to check if two dates are the same day
+  const isSameDay = (d1: Date, d2: Date): boolean => {
+    return (
+      d1.getFullYear() === d2.getFullYear() &&
+      d1.getMonth() === d2.getMonth() &&
+      d1.getDate() === d2.getDate()
+    );
+  };
+
+  // Initialize with the current context date
+  React.useEffect(() => {
+    if (
+      selectedDate &&
+      (!selectedDates.length ||
+        !selectedDates.some((d) => isSameDay(d, selectedDate)))
+    ) {
+      setSelectedDates([selectedDate]);
+    }
+  }, [selectedDate]);
 
   // Function to handle item selection
   const handleItemClick = (item: string) => {
@@ -46,13 +70,66 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     setSelectedItem("Settings");
   };
 
+  // Function to handle date changes (single date selection)
+  const handleDateChange = (date: Date) => {
+    // Update the context date state
+    setSelectedDate(date);
+
+    // Also ensure this date is in the selectedDates array
+    if (!selectedDates.some((d) => isSameDay(d, date))) {
+      // Replace the selectedDates array with just this date
+      // This ensures we don't have unexpected behavior when switching
+      // between single and multi select
+      setSelectedDates([date]);
+    }
+  };
+
+  // Function to handle multiple date selections
+  const handleMultipleDatesChange = (dates: Date[]) => {
+    // Update the multiple dates state
+    setSelectedDates(dates);
+
+    // If any dates are selected, update the context with the most appropriate date
+    if (dates.length > 0) {
+      // Options for which date to use as the "main" selected date:
+
+      // Option 1: Use the most recent date
+      const mostRecentDate = new Date(
+        Math.max(...dates.map((date) => date.getTime()))
+      );
+
+      // Option 2: Use the earliest date
+      // const earliestDate = new Date(
+      //   Math.min(...dates.map(date => date.getTime()))
+      // );
+
+      // Option 3: Use today if it's selected, otherwise most recent
+      // const today = new Date();
+      // today.setHours(0, 0, 0, 0);
+      // const todaySelected = dates.find(d => isSameDay(d, today));
+      // const dateToUse = todaySelected || mostRecentDate;
+
+      // Update the context with our chosen date
+      setSelectedDate(mostRecentDate);
+    }
+
+    console.log(
+      "Multiple dates selected:",
+      dates.map((d) => d.toISOString())
+    );
+  };
+
   return (
     <Sidebar {...props}>
       <SidebarHeader className="border-sidebar-border h-16 border-b flex items-center justify-center">
         <ClockTop />
       </SidebarHeader>
       <SidebarContent>
-        <DatePicker />
+        <DatePicker
+          date={selectedDate}
+          onDateChange={handleDateChange}
+          onMultipleDatesChange={handleMultipleDatesChange}
+        />
         <SidebarSeparator className="mx-0" />
         <div className="px-2 py-2">
           {data.feeds.map((feed) => (

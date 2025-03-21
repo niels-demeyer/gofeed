@@ -7,9 +7,11 @@ import { DayClickEventHandler } from "react-day-picker";
 export function DatePicker({
   date,
   onDateChange,
+  onMultipleDatesChange,
 }: {
   date?: Date;
   onDateChange?: (date: Date) => void;
+  onMultipleDatesChange?: (dates: Date[]) => void;
 }) {
   // Use context values as fallbacks if props aren't provided
   const { selectedDate, setSelectedDate } = useSelectedItem();
@@ -26,14 +28,7 @@ export function DatePicker({
     if (currentDate && !selectedDates.some((d) => isSameDay(d, currentDate))) {
       setSelectedDates([currentDate]);
     }
-  }, []);
-
-  // Update selected dates when external date changes
-  React.useEffect(() => {
-    if (currentDate && !selectedDates.some((d) => isSameDay(d, currentDate))) {
-      setSelectedDates((prev) => [...prev, currentDate]);
-    }
-  }, [currentDate]);
+  }, [currentDate]); // Only depend on currentDate, not selectedDates
 
   // Helper function to check if two dates are the same day
   const isSameDay = (d1: Date, d2: Date): boolean => {
@@ -45,7 +40,8 @@ export function DatePicker({
   };
 
   // Handle day selection with ctrl/meta key support
-  const handleDayClick: DayClickEventHandler = (day, modifiers, e) => {
+  const handleDayClick: DayClickEventHandler = (day, _, e) => {
+    // Using _ for unused modifiers parameter
     if (!day) return;
 
     console.log("DatePicker: day selected:", day.toISOString());
@@ -55,22 +51,35 @@ export function DatePicker({
 
     if (isMultiSelect) {
       // For multi-select, toggle the selected date
-      setSelectedDates((prev) => {
-        // Check if date already selected
-        const dateAlreadySelected = prev.some((d) => isSameDay(d, day));
+      const dateAlreadySelected = selectedDates.some((d) => isSameDay(d, day));
 
-        if (dateAlreadySelected) {
-          // If already selected, remove it
-          return prev.filter((d) => !isSameDay(d, day));
-        } else {
-          // If not selected, add it
-          return [...prev, day];
-        }
-      });
+      let newDates: Date[];
+      if (dateAlreadySelected) {
+        // If already selected, remove it
+        newDates = selectedDates.filter((d) => !isSameDay(d, day));
+      } else {
+        // If not selected, add it
+        newDates = [...selectedDates, day];
+      }
+
+      // Update our local state first
+      setSelectedDates(newDates);
+
+      // Then notify about multiple dates if handler provided
+      // Use setTimeout to move this out of the render phase
+      if (onMultipleDatesChange) {
+        setTimeout(() => {
+          onMultipleDatesChange(newDates);
+        }, 0);
+      }
     } else {
       // For single select, just use the regular flow and update the current date
       setSelectedDates([day]);
-      handleDateChange(day);
+
+      // Use setTimeout to move this out of the render phase
+      setTimeout(() => {
+        handleDateChange(day);
+      }, 0);
     }
   };
 
