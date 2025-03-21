@@ -17,15 +17,10 @@ import {
 
 // This is sample data.
 const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
-  calendars: [
+  feeds: [
     {
       name: "My Feeds",
-      items: ["Personal", "Work", "Family"],
+      items: ["Personal", "Work", "Family,"],
     },
     {
       name: "Favorites",
@@ -55,13 +50,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <DatePicker />
         <SidebarSeparator className="mx-0" />
         <div className="px-2 py-2">
-          {data.calendars.map((calendar) => (
-            <div key={calendar.name} className="mb-4">
+          {data.feeds.map((feed) => (
+            <div key={feed.name} className="mb-4">
               <h3 className="mb-2 px-4 text-sm font-medium text-muted-foreground">
-                {calendar.name}
+                {feed.name}
               </h3>
               <div className="space-y-1">
-                {calendar.items.map((item) => (
+                {feed.items.map((item) => (
                   <button
                     key={item}
                     onClick={() => handleItemClick(item)}
