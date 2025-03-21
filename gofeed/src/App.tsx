@@ -27,6 +27,7 @@ import {
   useSearchParams,
 } from "react-router-dom";
 import { useEffect, useRef } from "react";
+import { Settings } from "@/components/Settings";
 
 // Helper function to format dates for URL
 function formatDateForUrl(date: Date): string {
@@ -50,11 +51,12 @@ function parseDatesFromUrl(dateStr: string): Date[] {
 
 function AppHeader() {
   const { selectedItem, selectedDate } = useSelectedItem();
-  const formattedDate = selectedDate
-    ? new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(
-        selectedDate
-      )
-    : "";
+  const formattedDate =
+    selectedDate && selectedItem !== "settings"
+      ? new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(
+          selectedDate
+        )
+      : "";
 
   return (
     <header className="sticky top-0 flex h-16 shrink-0 items-center gap-2 border-b bg-background px-4">
@@ -65,7 +67,7 @@ function AppHeader() {
           <BreadcrumbItem>
             <BreadcrumbPage>{selectedItem}</BreadcrumbPage>
           </BreadcrumbItem>
-          {selectedDate && (
+          {selectedDate && selectedItem !== "settings" && (
             <BreadcrumbItem>
               <BreadcrumbPage>{formattedDate}</BreadcrumbPage>
             </BreadcrumbItem>
@@ -89,10 +91,15 @@ function ItemContent() {
     if (itemId && itemId !== selectedItem && !hasUpdatedSelectedItem.current) {
       setSelectedItem(itemId);
       hasUpdatedSelectedItem.current = true;
+
+      // If we're switching to settings, clear the selected date
+      if (itemId === "settings") {
+        setSelectedDate(null);
+      }
     }
 
-    // Handle date parameters
-    if (dateParam && !hasUpdatedDates.current) {
+    // Handle date parameters - only if not on settings page
+    if (dateParam && !hasUpdatedDates.current && itemId !== "settings") {
       try {
         const dates = parseDatesFromUrl(dateParam);
         if (dates.length > 0) {
@@ -105,6 +112,11 @@ function ItemContent() {
       }
     }
   }, [itemId, dateParam, setSelectedItem, setSelectedDate, selectedItem]);
+
+  // Special case for settings
+  if (itemId === "settings") {
+    return <Settings />;
+  }
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4">
@@ -127,6 +139,19 @@ function Root() {
   // Handle navigation based on selected item and date changes
   useEffect(() => {
     if (isNavigatingRef.current) return;
+
+    // Special case for settings - don't include date parameter
+    if (selectedItem === "settings") {
+      if (location.pathname !== "/settings") {
+        isNavigatingRef.current = true;
+        navigate("/settings", { replace: true });
+
+        setTimeout(() => {
+          isNavigatingRef.current = false;
+        }, 100);
+      }
+      return;
+    }
 
     const currentDateParam = searchParams.get("date");
     let newDateParam = currentDateParam;
@@ -178,6 +203,12 @@ function Root() {
 
 function RedirectToHome() {
   const { selectedItem, selectedDate } = useSelectedItem();
+
+  // Special case for settings
+  if (selectedItem === "settings") {
+    return <Navigate to="/settings" replace />;
+  }
+
   const basePath = selectedItem ? `/${selectedItem}` : "/home";
 
   // Add date query parameter if available
@@ -196,6 +227,7 @@ const router = createBrowserRouter([
       { index: true, element: <RedirectToHome /> },
       { path: ":itemId", element: <ItemContent /> },
       { path: "home", element: <ItemContent /> },
+      { path: "settings", element: <Settings /> },
     ],
   },
 ]);
