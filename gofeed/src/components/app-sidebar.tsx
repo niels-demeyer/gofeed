@@ -24,7 +24,7 @@ const data = {
   },
   calendars: [
     {
-      name: "My Calendars",
+      name: "My Feeds",
       items: ["Personal", "Work", "Family"],
     },
     {
@@ -54,7 +54,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton>
               <Plus />
-              <span>New Calendar</span>
+              <span>New Feed</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
