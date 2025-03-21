@@ -24,11 +24,37 @@ import {
   Outlet,
   Navigate,
   useLocation,
+  useSearchParams,
 } from "react-router-dom";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+
+// Helper function to format dates for URL
+function formatDateForUrl(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+    2,
+    "0"
+  )}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+// Helper function to parse dates from URL
+function parseDatesFromUrl(dateStr: string): Date[] {
+  return dateStr
+    .split(",")
+    .filter(Boolean)
+    .map((dateStr) => {
+      const [year, month, day] = dateStr.split("-").map(Number);
+      const date = new Date(year, month - 1, day);
+      return date;
+    });
+}
 
 function AppHeader() {
-  const { selectedItem } = useSelectedItem();
+  const { selectedItem, selectedDate } = useSelectedItem();
+  const formattedDate = selectedDate
+    ? new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(
+        selectedDate
+      )
+    : "";
 
   return (
     <header className="sticky top-0 flex h-16 shrink-0 items-center gap-2 border-b bg-background px-4">
@@ -39,6 +65,11 @@ function AppHeader() {
           <BreadcrumbItem>
             <BreadcrumbPage>{selectedItem}</BreadcrumbPage>
           </BreadcrumbItem>
+          {selectedDate && (
+            <BreadcrumbItem>
+              <BreadcrumbPage>{formattedDate}</BreadcrumbPage>
+            </BreadcrumbItem>
+          )}
         </BreadcrumbList>
       </Breadcrumb>
     </header>
@@ -47,8 +78,11 @@ function AppHeader() {
 
 function ItemContent() {
   const { itemId } = useParams();
-  const { setSelectedItem, selectedItem } = useSelectedItem();
+  const [searchParams] = useSearchParams();
+  const dateParam = searchParams.get("date");
+  const { setSelectedItem, selectedItem, setSelectedDate } = useSelectedItem();
   const hasUpdatedSelectedItem = useRef(false);
+  const hasUpdatedDates = useRef(false);
 
   useEffect(() => {
     // Only update selected item on initial mount or when itemId changes
@@ -56,7 +90,21 @@ function ItemContent() {
       setSelectedItem(itemId);
       hasUpdatedSelectedItem.current = true;
     }
-  }, [itemId, setSelectedItem, selectedItem]);
+
+    // Handle date parameters
+    if (dateParam && !hasUpdatedDates.current) {
+      try {
+        const dates = parseDatesFromUrl(dateParam);
+        if (dates.length > 0) {
+          // Set the first date as the primary selected date
+          setSelectedDate(dates[0]);
+          hasUpdatedDates.current = true;
+        }
+      } catch (e) {
+        console.error("Error parsing dates from URL:", e);
+      }
+    }
+  }, [itemId, dateParam, setSelectedItem, setSelectedDate, selectedItem]);
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4">
@@ -70,28 +118,52 @@ function ItemContent() {
 }
 
 function Root() {
-  const { selectedItem } = useSelectedItem();
+  const { selectedItem, selectedDate } = useSelectedItem();
   const navigate = useNavigate();
   const location = useLocation();
   const isNavigatingRef = useRef(false);
+  const [searchParams] = useSearchParams();
 
-  // Handle navigation based on selected item changes
+  // Handle navigation based on selected item and date changes
   useEffect(() => {
+    if (isNavigatingRef.current) return;
+
+    const currentDateParam = searchParams.get("date");
+    let newDateParam = currentDateParam;
+
+    // If we have a selected date and it's different from the current URL
+    if (selectedDate) {
+      const formattedDate = formatDateForUrl(selectedDate);
+      if (currentDateParam !== formattedDate) {
+        newDateParam = formattedDate;
+      }
+    }
+
+    // Build the new URL with item and date parameters
+    const newPath = selectedItem ? `/${selectedItem}` : "/home";
+    const newUrl = newDateParam ? `${newPath}?date=${newDateParam}` : newPath;
+
     if (
-      selectedItem &&
-      location.pathname !== `/${selectedItem}` && // Updated path check
+      `${location.pathname}${location.search}` !== newUrl &&
       !isNavigatingRef.current
     ) {
       // Set flag to prevent re-navigation
       isNavigatingRef.current = true;
-      navigate(`/${selectedItem}`, { replace: true }); // Updated navigation path
+      navigate(newUrl, { replace: true });
 
       // Reset flag after navigation
       setTimeout(() => {
         isNavigatingRef.current = false;
       }, 100);
     }
-  }, [selectedItem, navigate, location.pathname]);
+  }, [
+    selectedItem,
+    selectedDate,
+    navigate,
+    location.pathname,
+    location.search,
+    searchParams,
+  ]);
 
   return (
     <SidebarProvider>
@@ -105,10 +177,15 @@ function Root() {
 }
 
 function RedirectToHome() {
-  const { selectedItem } = useSelectedItem();
-  return (
-    <Navigate to={selectedItem ? `/${selectedItem}` : "/home"} replace /> // Updated redirect path
-  );
+  const { selectedItem, selectedDate } = useSelectedItem();
+  const basePath = selectedItem ? `/${selectedItem}` : "/home";
+
+  // Add date query parameter if available
+  const dateQuery = selectedDate
+    ? `?date=${formatDateForUrl(selectedDate)}`
+    : "";
+
+  return <Navigate to={`${basePath}${dateQuery}`} replace />;
 }
 
 const router = createBrowserRouter([
@@ -117,7 +194,7 @@ const router = createBrowserRouter([
     element: <Root />,
     children: [
       { index: true, element: <RedirectToHome /> },
-      { path: ":itemId", element: <ItemContent /> }, // Updated route path
+      { path: ":itemId", element: <ItemContent /> },
       { path: "home", element: <ItemContent /> },
     ],
   },
