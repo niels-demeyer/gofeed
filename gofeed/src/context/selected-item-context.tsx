@@ -3,8 +3,8 @@ import * as React from "react";
 type SelectedItemContextType = {
   selectedItem: string;
   setSelectedItem: (item: string) => void;
-  selectedDate: Date;
-  setSelectedDate: (date: Date) => void;
+  selectedDate: Date | null;
+  setSelectedDate: (date: Date | null) => void;
 };
 
 const SelectedItemContext = React.createContext<
@@ -17,7 +17,9 @@ export function SelectedItemProvider({
   children: React.ReactNode;
 }) {
   const [selectedItem, setSelectedItem] = React.useState<string>("Personal");
-  const [selectedDate, setSelectedDate] = React.useState<Date>(new Date());
+  const [selectedDate, setSelectedDate] = React.useState<Date | null>(
+    new Date()
+  );
 
   return (
     <SelectedItemContext.Provider
