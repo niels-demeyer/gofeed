@@ -1,58 +1,63 @@
 package router
 
 import (
-	"encoding/json"
 	"net/http"
+
+	"github.com/niels-demeyer/gofeed/api/settings"
 )
 
-// SettingsHandler handles settings-related API routes
-type SettingsHandler struct {
-    // Add any dependencies here as needed (e.g., database client)
+// Router represents the application HTTP router
+type Router struct {
+    mux *http.ServeMux
 }
 
-// NewSettingsHandler creates a new settings handler
-func NewSettingsHandler() *SettingsHandler {
-    return &SettingsHandler{}
-}
-
-// RegisterRoutes registers all routes handled by this handler
-func (h *SettingsHandler) RegisterRoutes(mux *http.ServeMux) {
-    // Register GET and PUT handlers for settings
-    mux.HandleFunc("GET /api/settings", h.GetSettings)
-    mux.HandleFunc("PUT /api/settings", h.UpdateSettings)
-}
-
-// GetSettings handles retrieving user settings
-func (h *SettingsHandler) GetSettings(w http.ResponseWriter, r *http.Request) {
-    // Sample settings data - in a real app, this would come from a database
-    settings := map[string]interface{}{
-        "theme":           "light",
-        "articlesPerPage": 20,
-        "refreshInterval": 15,
-        "notifications":   true,
+// New creates a new router instance
+func New() *Router {
+    return &Router{
+        mux: http.NewServeMux(),
     }
-
-    w.Header().Set("Content-Type", "application/json")
-    json.NewEncoder(w).Encode(settings)
 }
 
-// UpdateSettings handles updating user settings
-func (h *SettingsHandler) UpdateSettings(w http.ResponseWriter, r *http.Request) {
-    var settings map[string]interface{}
+// NewWithRoutes creates a new router instance with all routes registered
+func NewWithRoutes() *Router {
+    r := New()
     
-    if err := json.NewDecoder(r.Body).Decode(&settings); err != nil {
-        w.WriteHeader(http.StatusBadRequest)
-        json.NewEncoder(w).Encode(map[string]string{
-            "error": "Invalid request format",
-        })
-        return
-    }
+    // Create all handlers
+    settingsHandler := settings.NewSettingsHandler()
     
-    // In a real app, save settings to database here
+    // Register all routes
+    r.RegisterRoutes(settingsHandler)
     
-    w.Header().Set("Content-Type", "application/json")
-    w.WriteHeader(http.StatusOK)
-    json.NewEncoder(w).Encode(map[string]string{
-        "status": "Settings updated successfully",
+    return r
+}
+
+// Handler returns the underlying http handler
+func (r *Router) Handler() http.Handler {
+    return r.mux
+}
+
+// SettingsHandler interface defines the methods needed for settings routes
+type SettingsHandler interface {
+    GetSettings(w http.ResponseWriter, r *http.Request)
+    UpdateSettings(w http.ResponseWriter, r *http.Request)
+}
+
+// RegisterSettingsRoutes registers all settings related routes
+func (r *Router) RegisterSettingsRoutes(sh SettingsHandler) {
+    r.mux.HandleFunc("/api/settings", func(w http.ResponseWriter, r *http.Request) {
+        switch r.Method {
+        case http.MethodGet:
+            sh.GetSettings(w, r)
+        case http.MethodPut:
+            sh.UpdateSettings(w, r)
+        default:
+            http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+        }
     })
+}
+
+// RegisterRoutes registers all application routes
+func (r *Router) RegisterRoutes(settingsHandler SettingsHandler) {
+    // Register settings routes
+    r.RegisterSettingsRoutes(settingsHandler)
 }

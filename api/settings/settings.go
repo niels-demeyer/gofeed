@@ -53,9 +53,3 @@ func (h *SettingsHandler) UpdateSettings(w http.ResponseWriter, r *http.Request)
     w.WriteHeader(http.StatusOK)
     json.NewEncoder(w).Encode(h.settings)
 }
-
-// RegisterRoutes registers the settings routes to the given router
-func (h *SettingsHandler) RegisterRoutes(mux *http.ServeMux) {
-    mux.HandleFunc("GET /api/settings", h.GetSettings)
-    mux.HandleFunc("PUT /api/settings", h.UpdateSettings)
-}

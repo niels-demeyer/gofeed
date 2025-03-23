@@ -2,29 +2,16 @@ package main
 
 import (
 	"log"
-	"os"
-	"strconv"
+	"net/http"
 
-	"github.com/niels-demeyer/gofeed/api/server"
+	"github.com/niels-demeyer/gofeed/api/router"
 )
 
 func main() {
-    // Default port
-    port := 8080
+    // Create and configure router with all routes registered
+    r := router.NewWithRoutes()
     
-    // Check if port is provided via environment variable
-    if envPort := os.Getenv("PORT"); envPort != "" {
-        if p, err := strconv.Atoi(envPort); err == nil {
-            port = p
-        }
-    }
-
-    // Create and configure the server
-    server := server.NewServer(port)
-    server.RegisterRoutes()
-    
-    // Start the server
-    if err := server.Start(); err != nil {
-        log.Fatalf("Server failed to start: %v", err)
-    }
+    // Start HTTP server
+    log.Println("Starting server on :8080")
+    log.Fatal(http.ListenAndServe(":8080", r.Handler()))
 }
