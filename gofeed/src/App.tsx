@@ -28,7 +28,18 @@ import {
 } from "react-router-dom";
 import { useEffect, useRef } from "react";
 import { Settings } from "@/components/Settings";
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      refetchOnWindowFocus: true,
+      retry: 1,
+    },
+  },
+});
 // Helper function to format dates for URL
 function formatDateForUrl(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
@@ -234,10 +245,13 @@ const router = createBrowserRouter([
 
 export default function App() {
   return (
-    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-      <SelectedItemProvider>
-        <RouterProvider router={router} />
-      </SelectedItemProvider>
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+        <SelectedItemProvider>
+          <RouterProvider router={router} />
+        </SelectedItemProvider>
+      </ThemeProvider>
+      <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
   );
 }

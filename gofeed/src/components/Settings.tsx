@@ -1,13 +1,75 @@
-// import * as React from "react";
 import { Switch } from "@/components/ui/switch";
 import { useTheme } from "@/components/theme-provider";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface SettingsProps {
   className?: string;
 }
 
+interface ThemeSettings {
+  theme: "light" | "dark" | "system";
+}
+
+const fetchSettings = async (): Promise<ThemeSettings> => {
+  const response = await fetch("http://localhost:8080/api/settings");
+  if (!response.ok) {
+    throw new Error("Failed to fetch settings");
+  }
+  return response.json();
+};
+
+const updateSettings = async (theme: ThemeSettings["theme"]): Promise<ThemeSettings> => {
+  const response = await fetch("http://localhost:8080/api/settings", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ theme }),
+  });
+  if (!response.ok) {
+    throw new Error("Failed to update settings");
+  }
+  return response.json();
+};
+
 export function Settings({ className }: SettingsProps) {
   const { theme, setTheme } = useTheme();
+  const queryClient = useQueryClient();
+  
+  // Fetch theme from backend
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["settings"],
+    queryFn: fetchSettings,
+    onSuccess: (data: ThemeSettings) => {
+      // Sync local theme state with backend
+      setTheme(data.theme);
+    }
+  });
+  
+  // Update theme mutation
+  const { mutate } = useMutation({
+    mutationFn: updateSettings,
+    onSuccess: () => {
+      // Invalidate and refetch settings query
+      queryClient.invalidateQueries({ queryKey: ["settings"] });
+    }
+  });
+  
+  const handleThemeChange = (checked: boolean) => {
+    const newTheme = checked ? "dark" : "light";
+    setTheme(newTheme);
+    mutate(newTheme);
+  };
+  
+  const handleSystemThemeChange = (checked: boolean) => {
+    if (checked) {
+      setTheme("system");
+      mutate("system");
+    }
+  };
+
+  if (isLoading) return <div>Loading settings...</div>;
+  if (error) return <div>Error loading settings: {(error as Error).message}</div>;
 
   return (
     <div className={`p-4 space-y-4 ${className}`}>
@@ -25,9 +87,7 @@ export function Settings({ className }: SettingsProps) {
             <span className="text-sm">Light</span>
             <Switch
               checked={theme === "dark"}
-              onCheckedChange={(checked) =>
-                setTheme(checked ? "dark" : "light")
-              }
+              onCheckedChange={handleThemeChange}
               aria-label="Toggle dark mode"
             />
             <span className="text-sm">Dark</span>
@@ -43,7 +103,7 @@ export function Settings({ className }: SettingsProps) {
           </div>
           <Switch
             checked={theme === "system"}
-            onCheckedChange={(checked) => checked && setTheme("system")}
+            onCheckedChange={handleSystemThemeChange}
             aria-label="Use system theme"
           />
         </div>
