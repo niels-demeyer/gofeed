@@ -58,16 +58,6 @@ export function Settings({ className }: SettingsProps) {
           </div>
           <Switch aria-label="Toggle notifications" />
         </div>
-
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-medium">Compact Mode</h3>
-            <p className="text-sm text-muted-foreground">
-              Show more content with less spacing
-            </p>
-          </div>
-          <Switch aria-label="Toggle compact mode" />
-        </div>
       </div>
     </div>
   );
