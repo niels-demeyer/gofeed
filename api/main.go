@@ -21,6 +21,49 @@ func (lrw *loggingResponseWriter) WriteHeader(code int) {
     lrw.ResponseWriter.WriteHeader(code)
 }
 
+// CORS middleware using standard library
+func corsMiddleware(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        // Allowed origins
+        allowedOrigins := []string{
+            "http://localhost:3000",  // React default
+            "http://localhost:5173",  // Vite default
+            "http://localhost:4173",  // Vite preview
+            "http://127.0.0.1:5173",  // Alternative localhost
+            "http://localhost:8000",  // Another common dev port
+        }
+
+        // Get the origin from the request
+        origin := r.Header.Get("Origin")
+        
+        // Check if the origin is allowed
+        allowOrigin := false
+        for _, allowed := range allowedOrigins {
+            if origin == allowed {
+                allowOrigin = true
+                break
+            }
+        }
+
+        // Set CORS headers
+        if allowOrigin {
+            w.Header().Set("Access-Control-Allow-Origin", origin)
+            w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+            w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization, X-CSRF-Token")
+            w.Header().Set("Access-Control-Allow-Credentials", "true")
+        }
+
+        // Handle preflight requests
+        if r.Method == "OPTIONS" {
+            w.WriteHeader(http.StatusOK)
+            return
+        }
+
+        // Call the next handler
+        next.ServeHTTP(w, r)
+    })
+}
+
 func main() {
     // Configure logger
     // Comment out file logging setup
@@ -67,8 +110,8 @@ func main() {
         })
     }
     
-    // Apply middleware to the router
-    handler := loggingMiddleware(r.Handler())
+    // Apply middleware to the router - chain the CORS and logging middleware
+    handler := corsMiddleware(loggingMiddleware(r.Handler()))
     
     // Start HTTP server
     logger.Println("Starting server on :8080")
